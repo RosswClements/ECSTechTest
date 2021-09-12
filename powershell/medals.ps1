@@ -1,24 +1,3 @@
-#for write-output purposes
-
-$MedalResults = @(
-    @{
-        'sport' = 'cycling'
-        'podium' = @('1.China', '2.Germany', '3.ROC')
-    }
-    @{
-        'sport' = 'fencing'
-        'podium' = @('1.ROC', '2.France', '3.Italy')
-    }
-    @{
-        'sport' = 'high jump'
-        'podium' = @('1.Italy', '1.Qatar', '3.Belarus')
-    }
-    @{
-        'sport' = 'swimming'
-        'podium' = @('1.USA', '2.France', '3.Brazil')
-    }
-)
-
 function Build-MedalTable {
     param
     (
@@ -31,83 +10,63 @@ function Build-MedalTable {
     # Create a medal table based on the provided result list
     # First place gives 3 points, second place 2 points and third place 1 point
 
+    #Create ArrayList to store split strings. ArrayList necessary Arrays are fixed size.
+
     $SplitMedals = @()
 
-    #Split string on . into key value pairs
+    #Split string on '.' into key value pairs, where country is key and medal is value, place into arraylist.
 
-    For($i = 0 ; $i -lt $Medals.length; $i++) {
-        For($ii = 0 ; $ii -lt $Medals[$i]['podium'].length; $ii++) {
-            [System.Collections.ArrayList]$SplitMedals += @($Medals[$i]['podium'][$ii].Split(".")[1] , $Medals[$i]['podium'][$ii].Split(".")[0])
-           
-            
-        }
-
-        
+    For ($i = 0 ; $i -lt $Medals.length; $i++) {
+        For ($ii = 0 ; $ii -lt $Medals[$i]['podium'].length; $ii++) {
+            [System.Collections.ArrayList]$SplitMedals += @($Medals[$i]['podium'][$ii].Split(".")[1] , $Medals[$i]['podium'][$ii].Split(".")[0])         
+        }     
     }
-   # Write-output $SplitMedals
-        
-    #write-output ''
 
-    For($i = 0 ; $i -lt $SplitMedals.count; $i++) {
+    #Iterate over $Splitmedals and change number strings into ints
+    #Also change medal number into its score eg. 1(Gold) becomes 3 as it is worth 3 points.
 
+    For ($i = 0 ; $i -lt $SplitMedals.count; $i++) {
         
-        If( $SplitMedals[$i] -eq '1') {
+        If ( $SplitMedals[$i] -eq '1') {
             $SplitMedals[$i] = 3
         }
-        elseif( $SplitMedals[$i] -eq '2') {
-            $SplitMedals[$i]  = 2
+        elseif ( $SplitMedals[$i] -eq '2') {
+            $SplitMedals[$i] = 2
         }
-        elseif ( $SplitMedals[$i]  -eq '3') {
-            $SplitMedals[$i]  = 1
-        }
-    }
-   # Write-output $SplitMedals
-
-    For($i = 0 ; $i -lt $SplitMedals.count; $i = $i + 2) {
-        For($j = $i + 2 ; $j -lt $SplitMedals.count; $j = $j + 2) {
-        if($SplitMedals[$i] -eq $SplitMedals[$j]){
-           $SplitMedals[$i+1] += $SplitMedals[$j+1] 
-           $SplitMedals[$j] = 'remove'
-           $SplitMedals[$j+1] = 'remove'
-        }
-
+        elseif ( $SplitMedals[$i] -eq '3') {
+            $SplitMedals[$i] = 1
         }
     }
+   
+    #Iterate over $Splitmedals array and mark duplicate keys, while adding their values and then marking.
+    #Duplicates are marked rather than removed instantly in order to iterate smoothly as I am iterating with +2
+    #Duplicates to be removed in order to prep data for a HashTable later on.
+    For ($i = 0 ; $i -lt $SplitMedals.count; $i = $i + 2) {
+        For ($j = $i + 2 ; $j -lt $SplitMedals.count; $j = $j + 2) {
+            if ($SplitMedals[$i] -eq $SplitMedals[$j]) {
+                $SplitMedals[$i + 1] += $SplitMedals[$j + 1] 
+                $SplitMedals[$j] = 'remove'
+                $SplitMedals[$j + 1] = 'remove'
+            }
+        }
+    }
 
-  #  Write-output $SplitMedals
-   # Write-output ''
-
+    #Remove the values from the array that have been marked for deletion
     while ($SplitMedals -contains "remove") {
         $SplitMedals.Remove("remove")
+        #To remove a quirk bought about in one instance, of an [$i] == [$j] because they were both marked and then +=ing the mark.
         $SplitMedals.Remove("removeremove")
     }
-   # Write-output $SplitMedals
-  #  Write-output ''
+ 
 
+    #Create a HashTable for the final medal results
+    $MedalTable = @{}
 
-    $MedalTable = new-object System.Collections.Hashtable
+    #Fill HashTable with 
     for ( $i = 0; $i -lt $SplitMedals.count; $i += 2 ) {
-    $MedalTable.Add($SplitMedals[$i],$SplitMedals[$i+1]);
+        $MedalTable.Add($SplitMedals[$i], $SplitMedals[$i + 1])
+    }
+
+    #return final medal table, sorted by highest score first
+    return $MedalTable.GetEnumerator() | sort value -descending 
 }
-
-  #  Write-output $MedalTable
- #   Write-output ''
-
-    #write-output $MedalTable
-    return $MedalTable.GetEnumerator() | Sort-Object value -descending
-
-   
-     
-    
-    
-    #write-output $Medals
-    
-    #CommandNotFoundException: The term 'Build-MedalTable' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-    #Error seems to be outside the 'code goes here' part of the file so not sure what I actually need to do to fix this
-    #Also I'm presumably not supposed to edit the medals.tests.ps1 file?
-}
-
-Import-Module .\medals.ps1
-
-#For testing purposes
-Build-MedalTable $MedalResults
