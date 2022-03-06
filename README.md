@@ -1,4 +1,4 @@
-# I was told to use the language I knew least to test how well I knew coding concepts and the ability to search and learn on the job. Hence PowerShell, which I had never used before this test.
+## I was told to use the language I knew least to test how well I knew coding concepts and the ability to search and learn on the job. Hence PowerShell, which I had never used before this test.
 
 # Grad Tech Test
 
